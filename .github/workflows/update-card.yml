@@ -1,0 +1,40 @@
+name: Update NeetCode Card
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  update-card:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout neetcode-submissions
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Generate NeetCode card
+        run: python generate_card.py
+
+      - name: Push card to profile repo
+        env:
+          PROFILE_REPO_TOKEN: ${{ secrets.PROFILE_REPO_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${PROFILE_REPO_TOKEN}@github.com/TeamirTesh/TeamirTesh.git" /tmp/profile
+          cp neetcode-card.svg /tmp/profile/neetcode-card.svg
+          cd /tmp/profile
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add neetcode-card.svg
+          git diff --cached --quiet || git commit -m "chore: update neetcode-card.svg [skip ci]"
+          git push
